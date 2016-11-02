@@ -1,5 +1,6 @@
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.tartarus.snowball.ext.PorterStemmer;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -10,6 +11,11 @@ import java.util.Iterator;
 import java.util.List;
 
 public class Main {
+
+    public String stemTerm (String term) {
+        PorterStemmer stemmer = new PorterStemmer();
+        return stemmer.stem(term);
+    }
 
     public static void main(String[] args) {
 
@@ -30,6 +36,17 @@ public class Main {
         Document sampleDocument = Jsoup.parse(sampleContent);
 
         // test d'affichage
-        System.out.println(sampleDocument);
+        System.out.println("Texte pre traitement" + sampleDocument.text());
+
+        String[] words = sampleDocument.text().split((" "));
+
+        for (String word : words) {
+
+
+
+        }
+
+
+
     }
 }
