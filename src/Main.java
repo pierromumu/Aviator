@@ -1,5 +1,7 @@
+import com.sun.org.apache.xpath.internal.SourceTree;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.tartarus.snowball.ext.FrenchStemmer;
 import org.tartarus.snowball.ext.PorterStemmer;
 
 import java.io.IOException;
@@ -12,9 +14,11 @@ import java.util.List;
 
 public class Main {
 
-    public String stemTerm (String term) {
-        PorterStemmer stemmer = new PorterStemmer();
-        return stemmer.stem(term);
+    public static String stemTerm (String term) {
+        FrenchStemmer stemmer = new FrenchStemmer();
+        stemmer.setCurrent(term);
+        stemmer.stem();
+        return stemmer.getCurrent();
     }
 
     public static void main(String[] args) {
@@ -42,7 +46,9 @@ public class Main {
 
         for (String word : words) {
 
-
+            System.out.println(word);
+            word = stemTerm(word);
+            System.out.println(word);
 
         }
 
