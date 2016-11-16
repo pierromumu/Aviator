@@ -15,36 +15,44 @@ import java.sql.*;
 
 public class Main {
 
-    public static String stemTerm (String term) {
+    public static String stemTerm(String term) {
         FrenchStemmer stemmer = new FrenchStemmer();
         stemmer.setCurrent(term);
         stemmer.stem();
         return stemmer.getCurrent();
     }
 
-    public static void createDBs (Connection c){
-        Statement stmt = null;
+    public static void createTables(Connection c){
 
         try {
-            stmt = c.createStatement();
-            //Table contenant les id des mots et les mots eux-même
-            String sql = "CREATE TABLE IF NOT EXISTS words " +
-                    "(ID serial PRIMARY KEY     NOT NULL," +
-                    " WORD           TEXT    NOT NULL)";
+            Statement stmt = c.createStatement();
+
+            // table des documents
+            String sql =    "CREATE TABLE IF NOT EXISTS documents"+
+                            " (ID serial PRIMARY KEY NOT NULL,"+
+                            " TITLE text NOT NULL);";
             stmt.executeUpdate(sql);
 
-            //Table contenant les id des fichiers et les id des mots contenus
-            sql = "CREATE TABLE IF NOT EXISTS filesToWords " +
-                    "(ID INT unique     NOT NULL," +
-                    " WORD_ID unique  INT    NOT NULL," +
-                    "OCCURRENCES INT NOT NULL," +
-                    "primary key (ID, WORD_ID)," +
-                    "foreign key(WORD_ID) references words(ID));";
+            // table contenant les identifiants des mots, le texte ainsi que le nombre d'occurences dans le corpus pris en entier
+            sql =           "CREATE TABLE IF NOT EXISTS vocabulary"+
+                            " (ID serial PRIMARY KEY NOT NULL,"+
+                            " WORD text NOT NULL,"+
+                            " FREQ integer NOT NULL DEFAULT '0');";
+            stmt.executeUpdate(sql);
+
+            // index inversé
+            sql =           "CREATE TABLE IF NOT EXISTS invertedindex "+
+                            " (WORD_ID serial NOT NULL,"+
+                            " DOC_ID serial NOT NULL,"+
+                            " OCC integer NOT NULL,"+
+                            " primary key (WORD_ID, DOC_ID),"+
+                            " foreign key (WORD_ID) references vocabulary(ID),"+
+                            " foreign key (DOC_ID) references documents(ID));";
             stmt.executeUpdate(sql);
 
             stmt.close();
 
-            System.out.println("Table created successfully");
+            System.out.println("Tables created successfully.");
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -52,112 +60,135 @@ public class Main {
 
     }
 
-    public static void insertWord (Connection c, String word, int fileId){
-        Statement stmt = null;
+    public static void dropTables(Connection c){
 
         try {
+            Statement stmt = c.createStatement();
+            String sql = "DROP TABLE documents, invertedindex, vocabulary;";
+            stmt.executeUpdate(sql);
+            stmt.close();
 
-            stmt = c.createStatement();
-            //select exists(select * from words where id=2);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
-            //Ajout du mot à la table contenant tous les mots
-            String sql = "select exists(select * from words where word='"+word+"');";
+    public static void insertDocument(Connection c, String docTitle, int docId){
+
+        try {
+            Statement stmt = c.createStatement();
+            String sql = "INSERT INTO documents (ID, TITLE) VALUES ('"+docId+"', '"+docTitle+"');";
+            stmt.executeUpdate(sql);
+            stmt.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void insertWord(Connection c, String word, int docId){
+
+        try {
+            Statement stmt = c.createStatement();
+
+            // ajout du mot au vocabulaire si besoin et incrémentation des occurrences
+
+            String sql = "SELECT EXISTS(SELECT * FROM vocabulary WHERE WORD='"+word+"');";
             ResultSet result = stmt.executeQuery(sql);
             result.next();
 
             if (!(result.getBoolean("exists"))){
-
-
-                sql = "INSERT INTO words (word) values ('"+word+"');";
+                sql = "INSERT INTO vocabulary(WORD) VALUES ('"+word+"');";
                 stmt.executeUpdate(sql);
             }
 
-            sql = "select id from words where word='"+word+"'";
+            sql = "UPDATE vocabulary SET FREQ = FREQ + 1 WHERE WORD='"+word+"';";
+            stmt.executeUpdate(sql);
+
+            // mise à jour de l'index inversé
+
+            sql = "SELECT ID FROM vocabulary WHERE WORD='"+word+"'";
             result = stmt.executeQuery(sql);
+            int word_id = 0;
+            if(result.next())
+                word_id = result.getInt(1);
 
-            result.next();
-            int word_id = result.getInt("id");
-
-            //Ajout du mot pour dans la table des occurences
-            sql = "select exists(select * from filesToWords where word_id='"+word_id+"' AND id='"+fileId+"');";
+            sql = "SELECT EXISTS(SELECT * FROM invertedindex WHERE WORD_ID='"+word_id+"' AND DOC_ID='"+docId+"');";
             result = stmt.executeQuery(sql);
-
             result.next();
+
             if (!(result.getBoolean("exists"))){
-                sql = "INSERT INTO filesToWords (id, word_id, OCCURRENCES) values ('"+fileId+"', '"+word_id+"', '1');";
+                sql = "INSERT INTO invertedindex (WORD_ID, DOC_ID, OCC) VALUES ('"+word_id+"', '"+docId+"', '1');";
                 stmt.executeUpdate(sql);
             } else {
-                sql = "UPDATE filesToWords SET occurences = OCCURRENCES +1 WHERE word_id='"+word_id+"' AND id='"+fileId+"';";
+                sql = "UPDATE invertedindex SET OCC = OCC +1 WHERE WORD_ID='"+word_id+"' AND DOC_ID='"+docId+"';";
                 stmt.executeUpdate(sql);
             }
 
-
-
             stmt.close();
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
+    /* */
+
     public static void main(String[] args) {
 
-        String sampleContent = "";
-        Path sampleFile = Paths.get("./files/Google.html");
         try {
-            List<String> sampleLines = Files.readAllLines(sampleFile, StandardCharsets.UTF_8);
-            Iterator<String> sampleIterator = sampleLines.iterator();
-            while (sampleIterator.hasNext()) {
-                sampleContent += sampleIterator.next();
-            }
 
-            sampleContent = sampleLines.toString();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        Document sampleDocument = Jsoup.parse(sampleContent);
-
-        Connection c = null;
-
-        //********************************************************************************
-        // @Pierre: Pour créer la base de données, l'utilisateur via postgresql
-        //https://www.postgresql.org/message-id/4D958A35.8030501@hogranch.com
-        //********************************************************************************
-        try {
             Class.forName("org.postgresql.Driver");
-            c = DriverManager
-                    .getConnection("jdbc:postgresql://localhost:5432/aviator",
-                            "aviator", "aviator");
-            System.out.println("Opened database successfully");
+            // dbname, username & password = aviator
+            Connection c = DriverManager.getConnection("jdbc:postgresql://localhost:5432/aviator", "aviator", "aviator");
+            System.out.println("Database opened successfully.");
 
-            //Création des db
-            createDBs(c);
+            dropTables(c);
 
-            String[] words = sampleDocument.text().split((" "));
+            // création des tables dans la base de données
+            createTables(c);
 
 
-            // test d'affichage
-            //System.out.println("Texte pre traitement" + sampleDocument.text());
+            for(int i=1;i<=138;i++) {
+                String documentName="D"+i;
+                String textContent = "";
+                Path file = Paths.get("./files/corpus-utf8/"+documentName+".html");
 
-            for (String word : words) {
+                try {
+                    List<String> contentLines = Files.readAllLines(file, StandardCharsets.UTF_8);
+                    Iterator<String> iterator = contentLines.iterator();
+                    while (iterator.hasNext()) {
+                        textContent += iterator.next();
+                    }
+                    textContent = contentLines.toString();
 
-                //System.out.println(word);
-                word = stemTerm(word);
-                insertWord(c, word, 0); //fileId à 0 pour le test
-                //System.out.println(word);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
+                Document currentDocument = Jsoup.parse(textContent);
+
+                String[] words = currentDocument.text().split((" "));
+
+                //System.out.println("Texte original : " + currentDocument.text());
+
+                insertDocument(c, documentName, i);
+                for (String word : words) {
+                    //System.out.println(word);
+                    word = stemTerm(word.replaceAll("[\\W]",""));
+                    insertWord(c, word, i);
+                    //System.out.println(word);
+                }
+
+
+                System.out.println("Document "+documentName+".html successfully processed.");
             }
-
 
             c.close();
+
         } catch ( Exception e ) {
-            System.err.println( e.getClass().getName()+": "+ e.getMessage() );
+            System.err.println( e.getClass().getName()+": "+ e.getMessage());
             System.exit(0);
         }
-
-
-
-
-
     }
 }
