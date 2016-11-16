@@ -36,7 +36,7 @@ public class Main {
             //Table contenant les id des fichiers et les id des mots contenus
             sql = "CREATE TABLE IF NOT EXISTS filesToWords " +
                     "(ID INT unique     NOT NULL," +
-                    " WORD_ID  INT    NOT NULL," +
+                    " WORD_ID unique  INT    NOT NULL," +
                     "OCCURRENCES INT NOT NULL," +
                     "primary key (ID, WORD_ID)," +
                     "foreign key(WORD_ID) references words(ID));";
