@@ -1,90 +1,106 @@
 package query;
 
-//import com.sun.org.apache.xpath.internal.operations.String;
 import command.Command;
 import tools.Tools;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 
 
 public class Query {
 
-    private HashMap<String, Integer> result;
     private ArrayList<String> words;
+    private ArrayList<Integer> wordsIDs;
 
-    //private String listOfDocText = "SELECT TITLE FROM documents WHERE ID IN ("; // ajouter );
-    private String patternDocId = "SELECT DOC_ID FROM invertedindex WHERE WORD_ID IN (SELECT ID FROM vocabulary WHERE WORD = '"; // ajouter ')
+    // identifiant du document et somme des occurrences des termes de la requête
+    private HashMap<Integer, Integer> resultTF;
+    // pour chaque terme multiplier le nombre d'occurrences par l'IDF puis sommer le tout
+    private HashMap<Integer, Float> resultTFIDF;
 
-    private String docList = "SELECT * FROM invertedindex WHERE WORD_ID IN (SELECT ID FROM vocabulary WHERE WORD = '"; // ajouter ')
-    private String finalList = "SELECT documents.TITLE, docs.OCC, docs.WORD_ID FROM documents JOIN ( SELECT * FROM (";
+    private HashMap<Integer, HashMap<Integer, Integer>> wordDocOcc;
 
-    //SELECT documents.TITLE, invertedindex.OCC FROM invertedindex JOIN documents ON invertedindex.DOC_ID = documents.ID WHERE invertedindex.WORD_ID IN (..)
-
-    //SELECT * FROM invertedindex WHERE WORD_ID IN (SELECT ID FROM vocabulary WHERE WORD = 'omar') UNION SELECT * FROM invertedindex WHERE WORD_ID IN (SELECT ID FROM vocabulary WHERE WORD = 'intouch') WHERE DOC_ID IN (SELECT DOC_ID
-
-    public Query(ArrayList<String> w){
+    public Query(ArrayList<String> w) throws Exception {
         words = w;
+        populateWordsIDs();
+        if(wordsIDs.contains(null)) {
+            throw new Exception();
+        }
+    }
+
+    public void populateWordsIDs(){
+
+        wordsIDs = new ArrayList<Integer>(words.size());
+
+        for(String w : words){
+            w = Tools.cleanTerm(w);
+
+            if(Tools.processTerm(w)) {
+
+                String sql = "SELECT ID FROM vocabulary WHERE WORD = '";
+                sql = sql + w + "';";
+                ResultSet call = Command.executeQ(sql);
+
+                try {
+                    if(call.next()){
+                        wordsIDs.add(call.getInt(1));
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+
+                Command.closeStmt();
+            }
+        }
     }
 
     public void execute(){
-        result = new HashMap<>();
-        String sql = "";
-        String usql = "";
-        for(String w : words){
-            w = Tools.cleanTerm(w);
-            if(Tools.processTerm(w)){
-                if(!(sql.equals(""))){
-                    sql = sql + " INTERSECT ";
-                    usql = usql + " UNION ";
+
+        resultTF = new HashMap<>();
+        resultTFIDF = new HashMap<>();
+        wordDocOcc = new HashMap<>();
+
+        for(Integer i : wordsIDs){
+
+            HashMap<Integer, Integer> temp = new HashMap<>();
+
+            String sql = "";
+            sql = "SELECT DOC_ID, OCC FROM invertedindex WHERE WORD_ID = " + i + ";";
+
+            ResultSet call = Command.executeQ(sql);
+
+            try {
+                while(call.next()){
+
+                    if (temp.containsKey(call.getInt(1))){
+                        temp.put(call.getInt(1), call.getInt(2) + temp.get(call.getInt(1)));
+                    } else {
+                        temp.put(call.getInt(1), call.getInt(2));
+                    }
+
                 }
-                sql = sql + patternDocId + w + "')"; //patternDocId
-                usql = usql + docList + w + "')";
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
+
+            Command.closeStmt();
+
+            wordDocOcc.put(i, temp);
         }
-        sql = finalList + usql + ") as occurences WHERE DOC_ID IN (" + sql + ")) docs ON docs.DOC_ID = documents.ID;"; //listOfDocText ==> Renvoie liste des docs
 
+        for(Integer i : wordsIDs){
+            for (Map.Entry<Integer,Integer> e : wordDocOcc.get(i).entrySet()) {
 
-        ResultSet call = Command.executeQ(sql);
-
-        try {
-            while (call.next()){
-                //result.add(call.getString(1));
-
-                /************* ESPACE ALGO ************/
-                //Ideally, result should be of the form: <Document ID, accuracy value>
-
-                if (result.containsKey(call.getString(1))){
-                    result.put(call.getString(1), call.getInt(2) + result.get(call.getString(1)));
+                if (resultTF.containsKey(e.getKey())){
+                    resultTF.put(e.getKey(), e.getValue() + resultTF.get(e.getKey()));
                 } else {
-                    result.put(call.getString(1), call.getInt(2));
+                    resultTF.put(e.getKey(), e.getValue());
                 }
-
-                /**************** FIN ESPACE ALGO ************/
-
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
 
-        Command.closeStmt();
+        System.out.println(resultTF);
     }
-
-    public HashMap<String, Integer> getResult(){
-        return result;
-    }
-
-    public void displayResult(){
-        if (!(result.isEmpty())){
-            //Get the max, put it into a "done" table, and gets next value
-            String[] document = result.keySet().toArray(new String[0]);
-            //Order in documents; values in result.
-
-        } else {
-            System.out.println("There are no results for this query or no query has been made so far.");
-        }
-    }
-
 }

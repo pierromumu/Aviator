@@ -13,15 +13,16 @@ public class Main {
 
         //Index.createIndex();
 
-        /*
-            EXEMPLE DE REQUETE : on trouve l'ensemble des documents contenant les termes "omar" et "intouchables"
-            (la liste est non ordonnée pour le moment car le nombre d'occurrences de chaque mot n'est pas retenu)
-        */
+        // EXEMPLE DE REQUETE
         ArrayList<String> param = new ArrayList<>();
-        param.add("omar");
-        param.add("intouchables");
-        Query q = new Query(param);
-        q.execute();
-        System.out.println(q.getResult());
+        param.add("personnes");
+        param.add("Intouchables");
+        Query q1 = null;
+        try {
+            q1 = new Query(param);
+        } catch (Exception e) {
+            System.out.println("Error creating the query : check your input terms !");
+        }
+        q1.execute();
     }
 }
