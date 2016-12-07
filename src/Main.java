@@ -14,6 +14,7 @@ public class Main {
         //Index.createIndex();
 
         // EXEMPLE DE REQUETE
+
         ArrayList<String> param = new ArrayList<>();
         param.add("personnes");
         param.add("Intouchables");

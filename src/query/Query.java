@@ -7,6 +7,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.lang.Math;
 import java.util.List;
 
 
@@ -17,9 +18,12 @@ public class Query {
 
     // identifiant du document et somme des occurrences des termes de la requête
     private HashMap<Integer, Integer> resultTF;
+    //<Doc_ID, Précision> en suivant l'alog IDF
+    private HashMap<Integer, Integer> resultIDF;
     // pour chaque terme multiplier le nombre d'occurrences par l'IDF puis sommer le tout
-    private HashMap<Integer, Float> resultTFIDF;
+    private HashMap<Integer, Integer> resultTFIDF;
 
+    //wordDocOcc = <Word_ID, <Doc_ID, Occurences>>
     private HashMap<Integer, HashMap<Integer, Integer>> wordDocOcc;
 
     public Query(ArrayList<String> w) throws Exception {
@@ -59,8 +63,10 @@ public class Query {
     public void execute(){
 
         resultTF = new HashMap<>();
+        resultIDF = new HashMap<>();
         resultTFIDF = new HashMap<>();
         wordDocOcc = new HashMap<>();
+        double totalDocs = Tools.getNumberEntries();
 
         for(Integer i : wordsIDs){
 
@@ -90,6 +96,8 @@ public class Query {
             wordDocOcc.put(i, temp);
         }
 
+        //TF Hashmap
+
         for(Integer i : wordsIDs){
             for (Map.Entry<Integer,Integer> e : wordDocOcc.get(i).entrySet()) {
 
@@ -102,5 +110,44 @@ public class Query {
         }
 
         System.out.println(resultTF);
+
+        //IDF Hashmap
+
+        for(Integer i : wordsIDs){
+
+
+            double nbDocs = wordDocOcc.get(i).size();
+            double weight = Math.log(totalDocs/nbDocs);
+
+            for (Map.Entry<Integer,Integer> e : wordDocOcc.get(i).entrySet()) {
+
+                if (resultIDF.containsKey(e.getKey())){
+                    resultIDF.put(e.getKey(), (int) Math.round(e.getValue()*weight) + resultIDF.get(e.getKey()));
+                } else {
+                    resultIDF.put(e.getKey(), (int) Math.round(e.getValue()*weight));
+                }
+            }
+        }
+
+        System.out.println(resultIDF);
+
+        for (int key=1; key < (int) totalDocs +1; key ++){
+            if (resultIDF.containsKey(key) && resultTF.containsKey(key)){
+                resultTFIDF.put(key, resultTF.get(key)*resultIDF.get(key));
+            } else if (resultIDF.containsKey(key)){
+                resultTFIDF.put(key, resultIDF.get(key));
+            } else if (resultTF.containsKey(key)){
+                resultTFIDF.put(key, resultTF.get(key));
+            } else {
+                resultTFIDF.put(key, 0);
+            }
+        }
+
+        Tools.displayOrderedResults(resultTFIDF);
+
+        HashMap<Integer, Boolean> verif = Tools.getVerifiedResults(1);
+
+        Tools.displayFinalComparison(verif, resultTFIDF);
+
     }
 }
