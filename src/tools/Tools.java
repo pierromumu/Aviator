@@ -88,27 +88,6 @@ public class Tools {
     }
 
 
-    //To delete if useless
-    public static ArrayList<Integer> orderResults_pertinence(HashMap<Integer, Integer> results) {
-        ArrayList<Integer> docs = new ArrayList<>(results.keySet());
-
-        //Ordering according to Bubble sort
-        for (int index = docs.size() -1 ; index > -1; index--){
-            for (int j = 0; j < index; j++){
-                if (results.get(docs.get(j)) == 0){
-                    docs.remove(j);
-                }
-                else if (results.get(docs.get(j+1)) > results.get(docs.get(j))){
-                    int temp = docs.get(j);
-                    docs.set(j, docs.get(j+1));
-                    docs.set(j+1, temp);
-                }
-            }
-        }
-
-        return docs;
-    }
-
     public static void displayOrderedResults(HashMap<Integer, Integer> results){
 
         ArrayList<Integer> docs = orderResults(results);

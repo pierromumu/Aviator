@@ -16,6 +16,7 @@ public class Query {
 
     private ArrayList<String> words;
     private ArrayList<Integer> wordsIDs;
+    private int queryId;
 
     // identifiant du document et somme des occurrences des termes de la requête
     private HashMap<Integer, Integer> resultTF;
@@ -27,12 +28,13 @@ public class Query {
     //wordDocOcc = <Word_ID, <Doc_ID, Occurences>>
     private HashMap<Integer, HashMap<Integer, Integer>> wordDocOcc;
 
-    public Query(ArrayList<String> w) throws Exception {
+    public Query(ArrayList<String> w, int id) throws Exception {
         words = w;
         populateWordsIDs();
         if(wordsIDs.contains(null)) {
             throw new Exception();
         }
+        queryId = id;
     }
 
     public void populateWordsIDs(){
@@ -146,11 +148,9 @@ public class Query {
 
         Tools.displayOrderedResults(resultTFIDF);
 
-        HashMap<Integer, Boolean> verif = Tools.getVerifiedResults(1);
+        HashMap<Integer, Boolean> verif = Tools.getVerifiedResults(this.queryId);
 
         Tools.displayFinalComparison(verif, resultTFIDF);
-
-        //HashMap<Integer, Boolean> orginalPertinence = Tools.
 
         ArrayList<Integer> orderedList = Tools.orderResults(resultTFIDF);
 
