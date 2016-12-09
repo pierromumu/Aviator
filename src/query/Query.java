@@ -1,9 +1,10 @@
 package query;
 
-import command.Command;
+import command.*;
+import tools.*;
+import graph.*;
+
 import org.jfree.ui.RefineryUtilities;
-import tools.Tools;
-import graph.Graph;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -18,14 +19,14 @@ public class Query {
     private ArrayList<Integer> wordsIDs;
     private int queryId;
 
-    // identifiant du document et somme des occurrences des termes de la requête
+    // identifiant du document et somme des occurrences des mots de la requête
     private HashMap<Integer, Integer> resultTF;
-    //<Doc_ID, Précision> en suivant l'alog IDF
-    private HashMap<Integer, Integer> resultIDF;
-    // pour chaque terme multiplier le nombre d'occurrences par l'IDF puis sommer le tout
-    private HashMap<Integer, Integer> resultTFIDF;
+    // identifiant du terme et valeur obtenue en suivant l'algorithme de calcul de l'IDF
+    private HashMap<Integer, Double> resultIDF;
+    // pour chaque terme multiplication du nombre d'occurrences par l'IDF puis somme sur le tout
+    private HashMap<Integer, Double> resultTFIDF;
 
-    //wordDocOcc = <Word_ID, <Doc_ID, Occurences>>
+    // stockage des résultats d'interoogation sous la forme <WORD_ID, <DOC_ID, OCC>>
     private HashMap<Integer, HashMap<Integer, Integer>> wordDocOcc;
 
     public Query(ArrayList<String> w, int id) throws Exception {
@@ -37,6 +38,7 @@ public class Query {
         queryId = id;
     }
 
+    // mise en correspondance des mots avec les identifiants dans la BD
     public void populateWordsIDs(){
 
         wordsIDs = new ArrayList<Integer>(words.size());
@@ -63,13 +65,14 @@ public class Query {
         }
     }
 
+    // exécution de la requête et affichage des résultats
     public void execute(){
 
         resultTF = new HashMap<>();
         resultIDF = new HashMap<>();
         resultTFIDF = new HashMap<>();
         wordDocOcc = new HashMap<>();
-        double totalDocs = Tools.getNumberEntries();
+        int totalDocs = Tools.getNumberEntries();
 
         for(Integer i : wordsIDs){
 
@@ -96,10 +99,26 @@ public class Query {
 
             Command.closeStmt();
 
+            sql = "SELECT ID FROM documents;";
+            ResultSet callD = Command.executeQ(sql);
+
+            try {
+                while(callD.next()) {
+
+                    if (!(temp.containsKey(callD.getInt(1))))
+                        temp.put(callD.getInt(1), 0);
+
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            Command.closeStmt();
+
             wordDocOcc.put(i, temp);
         }
 
-        //TF Hashmap
+        // remplissage de la HashMap TF
 
         for(Integer i : wordsIDs){
             for (Map.Entry<Integer,Integer> e : wordDocOcc.get(i).entrySet()) {
@@ -112,41 +131,45 @@ public class Query {
             }
         }
 
-        System.out.println(resultTF);
+        //System.out.println(resultTF);
 
-        //IDF Hashmap
+        // remplissage de la HashMap IDF
 
         for(Integer i : wordsIDs){
 
+            int nbDocs = 0;
 
-            double nbDocs = wordDocOcc.get(i).size();
-            double weight = Math.log(totalDocs/nbDocs);
+            for(int k : wordDocOcc.get(i).keySet()){
+                if(wordDocOcc.get(i).get(k) > 0)
+                    nbDocs=nbDocs+1;
+            }
 
+            double weight = Math.log10((double)totalDocs/(double)nbDocs);
+
+            if (!(resultIDF.containsKey(i))){
+                resultIDF.put(i, weight);
+            }
+
+        }
+
+        //System.out.println(resultIDF);
+
+        // remplissage de la HashMap TFIDF
+
+        for(Integer i : wordsIDs){
             for (Map.Entry<Integer,Integer> e : wordDocOcc.get(i).entrySet()) {
 
-                if (resultIDF.containsKey(e.getKey())){
-                    resultIDF.put(e.getKey(), (int) Math.round(e.getValue()*weight) + resultIDF.get(e.getKey()));
+                if (resultTFIDF.containsKey(e.getKey())){
+                    resultTFIDF.put(e.getKey(), e.getValue()*resultIDF.get(i) + resultTFIDF.get(e.getKey()));
                 } else {
-                    resultIDF.put(e.getKey(), (int) Math.round(e.getValue()*weight));
+                    resultTFIDF.put(e.getKey(), e.getValue()*resultIDF.get(i));
                 }
             }
         }
 
-        System.out.println(resultIDF);
+        //System.out.println(resultTFIDF);
 
-        for (int key=1; key < (int) totalDocs +1; key ++){
-            if (resultIDF.containsKey(key) && resultTF.containsKey(key)){
-                resultTFIDF.put(key, resultTF.get(key)*resultIDF.get(key));
-            } else if (resultIDF.containsKey(key)){
-                resultTFIDF.put(key, resultIDF.get(key));
-            } else if (resultTF.containsKey(key)){
-                resultTFIDF.put(key, resultTF.get(key));
-            } else {
-                resultTFIDF.put(key, 0);
-            }
-        }
-
-        Tools.displayOrderedResults(resultTFIDF);
+        //Tools.displayOrderedResults(resultTFIDF);
 
         HashMap<Integer, Boolean> verif = Tools.getVerifiedResults(this.queryId);
 
@@ -160,15 +183,14 @@ public class Query {
 
         ArrayList<Double> tempData;
 
-        for (int sizeData = 1; sizeData< totalDocs +1; sizeData++){
+        for (int sizeData = 1; sizeData <= totalDocs; sizeData++){
 
             tempData = new ArrayList<>();
 
             float recall = Tools.recall(orderedList, verif, sizeData, nbPert);
-
             float accuracy = Tools.accuracy(orderedList, verif, sizeData);
 
-            System.out.println("Data for "+sizeData+" elements: Recall " + recall + " | Accuracy: "+accuracy);
+            //System.out.println("Data for "+sizeData+" elements: Recall " + recall + " | Accuracy: "+accuracy);
 
             tempData.add((double) recall);
             tempData.add((double) accuracy);
@@ -176,7 +198,7 @@ public class Query {
 
         }
 
-        Graph graph = new Graph("Recall =f(Accuracy)", data);
+        Graph graph = new Graph("Recall =f(Accuracy)", data, queryId);
         graph.pack();
         RefineryUtilities.centerFrameOnScreen(graph);
         graph.setVisible(true);

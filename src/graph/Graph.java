@@ -4,22 +4,14 @@ import org.jfree.chart.*;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.xy.*;
 import org.jfree.ui.*;
+
 import java.util.ArrayList;
 
 
-/**
- * Created by thomas on 09/12/16.
- */
 public class Graph extends ApplicationFrame {
 
-    /* TO LAUNCH
-    final XYSeriesDemo demo = new XYSeriesDemo("XY Series Demo");
-    demo.pack();
-    RefineryUtilities.centerFrameOnScreen(demo);
-    demo.setVisible(true);
-     */
-
-    public Graph(String title, ArrayList<ArrayList<Double>> originalData){
+    // affichage
+    public Graph(String title, ArrayList<ArrayList<Double>> originalData, int id){
         super(title);
         final XYSeries series = new XYSeries("Accuracy function of Recall");
         for (ArrayList<Double> table : originalData){
@@ -27,7 +19,7 @@ public class Graph extends ApplicationFrame {
         }
         final XYSeriesCollection data = new XYSeriesCollection(series);
         final JFreeChart chart = ChartFactory.createXYLineChart(
-                "Information Search",
+                "Query n°"+id,
                 "Recall",
                 "Accuracy",
                 data,
@@ -40,7 +32,5 @@ public class Graph extends ApplicationFrame {
         final ChartPanel chartPanel = new ChartPanel(chart);
         chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
         setContentPane(chartPanel);
-
     }
-
 }

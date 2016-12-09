@@ -1,7 +1,7 @@
 package tools;
 
-import command.Command;
-import jdk.nashorn.internal.runtime.regexp.joni.Regex;
+import command.*;
+
 import org.tartarus.snowball.ext.FrenchStemmer;
 import org.apache.lucene.analysis.fr.FrenchAnalyzer;
 import org.apache.lucene.analysis.CharArraySet;
@@ -29,6 +29,7 @@ public class Tools {
         return stemmer.getCurrent();
     }
 
+    // retrait des caractères parasites d'une chaîne
     public static String cleanTerm(String term){
 
         String cleanedTerm;
@@ -37,6 +38,7 @@ public class Tools {
         return stemTerm(cleanedTerm.replaceAll("[\\W]",""));
     }
 
+    // vérification de stop word
     public static boolean processTerm(String term){
         if(stopWords.contains(term))
             return false;
@@ -44,6 +46,7 @@ public class Tools {
             return true;
     }
 
+    // obtention du nombre de documents
     public static int getNumberEntries(){
 
         String sql = "SELECT count(ID) FROM documents;";
@@ -63,17 +66,18 @@ public class Tools {
         return ret;
     }
 
-    public static void displayResults(HashMap<Integer, Integer> results){
+    // affichage de l'indice de précision pour chaque document
+    public static void displayResults(HashMap<Integer, Double> results){
         System.out.println("Doc ID\t| Accuracy");
-        for (Map.Entry<Integer, Integer> e : results.entrySet()){
+        for (Map.Entry<Integer, Double> e : results.entrySet()){
             System.out.println(e.getKey()+"\t\t| "+e.getValue());
         }
     }
 
-    public static ArrayList<Integer> orderResults(HashMap<Integer, Integer> results) {
+    public static ArrayList<Integer> orderResults(HashMap<Integer, Double> results) {
         ArrayList<Integer> docs = new ArrayList<>(results.keySet());
 
-        //Ordering according to Bubble sort
+        // trie à bulles appliqué
         for (int index = docs.size() -1 ; index > -1; index--){
             for (int j = 0; j < index; j++){
                 if (results.get(docs.get(j+1)) > results.get(docs.get(j))){
@@ -87,8 +91,7 @@ public class Tools {
         return docs;
     }
 
-
-    public static void displayOrderedResults(HashMap<Integer, Integer> results){
+    public static void displayOrderedResults(HashMap<Integer, Double> results){
 
         ArrayList<Integer> docs = orderResults(results);
 
@@ -96,11 +99,9 @@ public class Tools {
         for (int i : docs){
             System.out.println(i+"\t\t| "+results.get(i));
         }
-
     }
 
-
-
+    // comparaison des résultats obtenus à ceux attendus dans les fichiers qrels
     public static HashMap<Integer, Boolean> getVerifiedResults(int query){
 
             String documentName="qrelQ"+query;
@@ -148,6 +149,7 @@ public class Tools {
         return result;
     }
 
+    // décompte des entrées de la HashMap
     public static int getNbPertinent(HashMap<Integer, Boolean> doc){
 
         int result = 0;
@@ -161,25 +163,13 @@ public class Tools {
         return result;
     }
 
-    public static HashMap<Integer, Boolean> pertinence(HashMap<Integer, Boolean> resultsToReach, HashMap<Integer, Integer> results){
-        HashMap<Integer, Boolean> res = new HashMap<>();
+    // affichage du tableau comparatif bien formaté
+    public static void displayFinalComparison(HashMap<Integer, Boolean> resultsToReach, HashMap<Integer, Double> results){
 
-        for (int i : results.values()) {
-            res.put(i, (resultsToReach.get(i) && results.get(i) > 0) || (!resultsToReach.get(i) && results.get(i) == 0));
-        }
-
-        return res;
-
-    }
-
-
-
-    public static void displayFinalComparison(HashMap<Integer, Boolean> resultsToReach, HashMap<Integer, Integer> results){
-
-        //Copied code from ordered display
+        // récupération du résultat préalablement ordonné
         ArrayList<Integer> docs = orderResults(results);
 
-        System.out.println("Doc ID\t|\tAccuracy\t|\tExpected\t|\tOK/KO");
+        System.out.println("Doc ID\t|\t\tAccuracy\t\t\t\t\t|\t\tExpected\t|\t\tOK/KO");
         boolean verif;
         int errors = 0;
         ArrayList<Integer> errorList = new ArrayList<>();
@@ -193,17 +183,19 @@ public class Tools {
                     errors ++;
                     errorList.add(i);
                 }
-                System.out.println(i+"\t\t|\t"+results.get(i)+"\t\t\t|\t"+resultsToReach.get((i)) + "\t\t|\t"+verif);
+
+                System.out.println(i+"\t\t|\t\t"+results.get(i)+"\t\t\t|\t\t"+resultsToReach.get((i)) + "\t\t|\t\t"+verif);
             } else {
-                System.out.println(i+"\t\t|\t"+results.get(i)+"\t\t\t|\tNO DATA\t\t|\tOK (NO DATA)");
+                System.out.println(i+"\t\t|\t\t"+results.get(i)+"\t\t\t|\t\tNO DATA\t\t|\t\tOK (NO DATA)");
             }
 
         }
 
-        System.out.println("Number of errors: " + errors);
-        System.out.println("Errors: " + errorList);
+        System.out.println("Errors count : " + errors);
+        System.out.println("Incriminated documents : " + errorList);
     }
 
+    // calcul du rappel pour le graphe
     public static float recall(ArrayList<Integer> orderedResults, HashMap<Integer, Boolean> comparison, int max, int nbPert){
 
         if (max > orderedResults.size()){
@@ -225,6 +217,7 @@ public class Tools {
         return result;
     }
 
+    // calcul de la précision pour le graphe
     public static float accuracy(ArrayList<Integer> orderedResults, HashMap<Integer, Boolean> comparison, int max){
 
         float result = 0;

@@ -22,6 +22,7 @@ public class Command {
         }
     }
 
+    // mise à jour
     public static void executeU(String text){
 
         try {
@@ -34,6 +35,7 @@ public class Command {
         }
     }
 
+    // interrogation avec renvoi de ResultSet
     public static ResultSet executeQ(String text){
 
         ResultSet result = null;

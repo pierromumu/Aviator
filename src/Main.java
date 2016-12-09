@@ -14,28 +14,30 @@ public class Main {
 
         Command.connect();
 
+        // CODE POUR PEUPLER LA BASE DE DONNEES
+
         //Index.createIndex();
 
-        // EXEMPLE DE REQUETE
+        // REQUETES
 
         Path requestsFile = Paths.get("./files/requetes.html");
         ArrayList<ArrayList<String>> requests = new ArrayList<>();
         requests = Requests.parse(requestsFile);
+        System.out.println("");
 
         for (int i =0; i < requests.size(); i++){
-            //L'arraylist peut remplacer la liste manuelle d'après
-            System.out.println(requests.get(i));
+            System.out.println("*** Query n°"+(i+1)+" : "+requests.get(i));
+            System.out.println("");
+            Query q = null;
+            try {
+                q = new Query(requests.get(i), i+1);
+            } catch (Exception e) {
+                System.out.println("Error creating the query n°"+(i+1)+", check your input terms !");
+            }
+            q.execute();
+            System.out.println("");
         }
 
-        ArrayList<String> param = new ArrayList<>();
-        param.add("personnes");
-        param.add("Intouchables");
-        Query q1 = null;
-        try {
-            q1 = new Query(param, 1);
-        } catch (Exception e) {
-            System.out.println("Error creating the query : check your input terms !");
-        }
-        q1.execute();
+        System.out.println("All queries processed.");
     }
 }
