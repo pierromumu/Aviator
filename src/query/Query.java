@@ -1,14 +1,15 @@
 package query;
 
 import command.Command;
+import org.jfree.ui.RefineryUtilities;
 import tools.Tools;
+import graph.Graph;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.lang.Math;
-import java.util.List;
 
 
 public class Query {
@@ -148,6 +149,38 @@ public class Query {
         HashMap<Integer, Boolean> verif = Tools.getVerifiedResults(1);
 
         Tools.displayFinalComparison(verif, resultTFIDF);
+
+        //HashMap<Integer, Boolean> orginalPertinence = Tools.
+
+        ArrayList<Integer> orderedList = Tools.orderResults(resultTFIDF);
+
+        int nbPert = Tools.getNbPertinent(verif);
+
+        ArrayList<ArrayList<Double>> data = new ArrayList<>();
+
+        ArrayList<Double> tempData;
+
+        for (int sizeData = 1; sizeData< totalDocs +1; sizeData++){
+
+            tempData = new ArrayList<>();
+
+            float recall = Tools.recall(orderedList, verif, sizeData, nbPert);
+
+            float accuracy = Tools.accuracy(orderedList, verif, sizeData);
+
+            System.out.println("Data for "+sizeData+" elements: Recall " + recall + " | Accuracy: "+accuracy);
+
+            tempData.add((double) recall);
+            tempData.add((double) accuracy);
+            data.add(tempData);
+
+        }
+
+        Graph graph = new Graph("Recall =f(Accuracy)", data);
+        graph.pack();
+        RefineryUtilities.centerFrameOnScreen(graph);
+        graph.setVisible(true);
+
 
     }
 }

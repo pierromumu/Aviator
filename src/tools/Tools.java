@@ -70,7 +70,7 @@ public class Tools {
         }
     }
 
-    public static void displayOrderedResults(HashMap<Integer, Integer> results){
+    public static ArrayList<Integer> orderResults(HashMap<Integer, Integer> results) {
         ArrayList<Integer> docs = new ArrayList<>(results.keySet());
 
         //Ordering according to Bubble sort
@@ -84,12 +84,43 @@ public class Tools {
             }
         }
 
+        return docs;
+    }
+
+
+    //To delete if useless
+    public static ArrayList<Integer> orderResults_pertinence(HashMap<Integer, Integer> results) {
+        ArrayList<Integer> docs = new ArrayList<>(results.keySet());
+
+        //Ordering according to Bubble sort
+        for (int index = docs.size() -1 ; index > -1; index--){
+            for (int j = 0; j < index; j++){
+                if (results.get(docs.get(j)) == 0){
+                    docs.remove(j);
+                }
+                else if (results.get(docs.get(j+1)) > results.get(docs.get(j))){
+                    int temp = docs.get(j);
+                    docs.set(j, docs.get(j+1));
+                    docs.set(j+1, temp);
+                }
+            }
+        }
+
+        return docs;
+    }
+
+    public static void displayOrderedResults(HashMap<Integer, Integer> results){
+
+        ArrayList<Integer> docs = orderResults(results);
+
         System.out.println("Doc ID\t| Accuracy");
         for (int i : docs){
             System.out.println(i+"\t\t| "+results.get(i));
         }
 
     }
+
+
 
     public static HashMap<Integer, Boolean> getVerifiedResults(int query){
 
@@ -138,21 +169,36 @@ public class Tools {
         return result;
     }
 
+    public static int getNbPertinent(HashMap<Integer, Boolean> doc){
+
+        int result = 0;
+
+        for (int i : doc.keySet()){
+            if (doc.get(i)){
+                result += 1;
+            }
+        }
+
+        return result;
+    }
+
+    public static HashMap<Integer, Boolean> pertinence(HashMap<Integer, Boolean> resultsToReach, HashMap<Integer, Integer> results){
+        HashMap<Integer, Boolean> res = new HashMap<>();
+
+        for (int i : results.values()) {
+            res.put(i, (resultsToReach.get(i) && results.get(i) > 0) || (!resultsToReach.get(i) && results.get(i) == 0));
+        }
+
+        return res;
+
+    }
+
+
+
     public static void displayFinalComparison(HashMap<Integer, Boolean> resultsToReach, HashMap<Integer, Integer> results){
 
         //Copied code from ordered display
-        ArrayList<Integer> docs = new ArrayList<>(results.keySet());
-
-        //Ordering according to Bubble sort
-        for (int index = docs.size() -1 ; index > -1; index--){
-            for (int j = 0; j < index; j++){
-                if (results.get(docs.get(j+1)) > results.get(docs.get(j))){
-                    int temp = docs.get(j);
-                    docs.set(j, docs.get(j+1));
-                    docs.set(j+1, temp);
-                }
-            }
-        }
+        ArrayList<Integer> docs = orderResults(results);
 
         System.out.println("Doc ID\t|\tAccuracy\t|\tExpected\t|\tOK/KO");
         boolean verif;
@@ -177,6 +223,50 @@ public class Tools {
 
         System.out.println("Number of errors: " + errors);
         System.out.println("Errors: " + errorList);
+    }
+
+    public static float recall(ArrayList<Integer> orderedResults, HashMap<Integer, Boolean> comparison, int max, int nbPert){
+
+        if (max > orderedResults.size()){
+            max = orderedResults.size();
+        }
+
+        int id;
+        float result = 0;
+
+        for (int i = 0; i < max; i++){
+            id = orderedResults.get(i);
+            if (comparison.containsKey(id) && comparison.get(id)){
+                result += 1;
+            }
+        }
+
+        result = (result / (float) nbPert);
+
+        return result;
+    }
+
+    public static float accuracy(ArrayList<Integer> orderedResults, HashMap<Integer, Boolean> comparison, int max){
+
+        float result = 0;
+
+        if (max > orderedResults.size()){
+            max = orderedResults.size();
+        }
+
+        int id;
+
+        for (int i = 0; i < max; i++){
+            id = orderedResults.get(i);
+            if (comparison.containsKey(id) && comparison.get(id)){
+                result += 1;
+            }
+        }
+
+        result = (result / (float) max);
+
+        return result;
+
     }
 
 }
