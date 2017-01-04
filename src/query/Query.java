@@ -18,6 +18,7 @@ public class Query {
     private ArrayList<String> words;
     private ArrayList<Integer> wordsIDs;
     private int queryId;
+    static private HashMap<Integer, ArrayList<Float>> accuracyResults = new HashMap<>();
 
     // identifiant du document et somme des occurrences des mots de la requête
     private HashMap<Integer, Integer> resultTF;
@@ -36,6 +37,19 @@ public class Query {
             throw new Exception();
         }
         queryId = id;
+    }
+
+    public static void displayAccuracyResults(){
+        int[] sizeData = {5, 10, 25};
+        for (int key:accuracyResults.keySet()){
+            for (int index = 0; index < accuracyResults.get(key).size(); index ++){
+                System.out.println("Request #"+key+" -- Data for "+sizeData[index]+" elements: Accuracy: "+accuracyResults.get(key).get(index));
+            }
+
+        }
+
+
+
     }
 
     // mise en correspondance des mots avec les identifiants dans la BD
@@ -73,6 +87,8 @@ public class Query {
         resultTFIDF = new HashMap<>();
         wordDocOcc = new HashMap<>();
         int totalDocs = Tools.getNumberEntries();
+
+        ArrayList<Float> accuracyTable = new ArrayList<>();
 
         for(Integer i : wordsIDs){
 
@@ -192,16 +208,29 @@ public class Query {
 
             //System.out.println("Data for "+sizeData+" elements: Recall " + recall + " | Accuracy: "+accuracy);
 
+            //HashMap: <ID requête, [Précision à 5, Précision à 10, Précision à 25]>
+
+            if (sizeData == 5){
+                accuracyTable.add(accuracy);
+            } else if (sizeData == 10){
+                accuracyTable.add(accuracy);
+            } else if (sizeData == 25){
+                accuracyTable.add(accuracy);
+            }
+
             tempData.add((double) recall);
             tempData.add((double) accuracy);
             data.add(tempData);
 
         }
 
-        Graph graph = new Graph("Recall =f(Accuracy)", data, queryId);
+        accuracyResults.put(this.queryId, accuracyTable);
+
+        /*Graph graph = new Graph("Recall =f(Accuracy)", data, queryId);
         graph.pack();
         RefineryUtilities.centerFrameOnScreen(graph);
-        graph.setVisible(true);
+        graph.setVisible(true);*/
+
 
 
     }

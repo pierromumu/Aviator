@@ -42,6 +42,8 @@ public class Main {
             System.out.println("");
         }
 
+        Query.displayAccuracyResults();
+
         System.out.println("All queries processed.");
     }
 }
