@@ -2,6 +2,7 @@ import index.*;
 import command.*;
 import query.*;
 import requests.*;
+import reword.Reword;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,6 +24,9 @@ public class Main {
         Path requestsFile = Paths.get("./files/requetes.html");
         ArrayList<ArrayList<String>> requests = new ArrayList<>();
         requests = Requests.parse(requestsFile);
+
+        ArrayList<ArrayList<String>> o = Reword.transformWordsLists(requests);
+
         System.out.println("");
 
         for (int i =0; i < requests.size(); i++){
