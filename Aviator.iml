@@ -14,5 +14,7 @@
     <orderEntry type="library" name="lucene-core-6.2.1" level="project" />
     <orderEntry type="library" name="jfreechart-1.0.19" level="project" />
     <orderEntry type="library" name="jcommon-1.0.23" level="project" />
+    <orderEntry type="library" name="httpclient-4.2.3" level="project" />
+    <orderEntry type="library" name="httpcore-4.3" level="project" />
   </component>
 </module>
