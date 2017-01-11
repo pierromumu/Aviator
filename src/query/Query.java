@@ -15,14 +15,15 @@ import java.lang.Math;
 
 public class Query {
 
-    private ArrayList<String> words;
+    private ArrayList<ArrayList<String>> words;
     private ArrayList<Integer> wordsIDs;
+    private ArrayList<Float> wordsIDsWeight;
     private int queryId;
     private static HashMap<Integer, ArrayList<Float>> accuracyResultsOriginal = new HashMap<>();
     private static HashMap<Integer, ArrayList<Float>> accuracyResultsEdited = new HashMap<>();
 
     // identifiant du document et somme des occurrences des mots de la requête
-    private HashMap<Integer, Integer> resultTF;
+    private HashMap<Integer, Float> resultTF;
     // identifiant du terme et valeur obtenue en suivant l'algorithme de calcul de l'IDF
     private HashMap<Integer, Double> resultIDF;
     // pour chaque terme multiplication du nombre d'occurrences par l'IDF puis somme sur le tout
@@ -31,7 +32,7 @@ public class Query {
     // stockage des résultats d'interoogation sous la forme <WORD_ID, <DOC_ID, OCC>>
     private HashMap<Integer, HashMap<Integer, Integer>> wordDocOcc;
 
-    public Query(ArrayList<String> w, int id) throws Exception {
+    public Query(ArrayList<ArrayList<String>> w, int id) throws Exception {
         words = w;
         populateWordsIDs();
         if(wordsIDs.contains(null)) {
@@ -76,19 +77,21 @@ public class Query {
     public void populateWordsIDs(){
 
         wordsIDs = new ArrayList<Integer>(words.size());
+        wordsIDsWeight = new ArrayList<>();
 
-        for(String w : words){
-            w = Tools.cleanTerm(w);
+        for(ArrayList<String> w : words){
+            String clean_w = Tools.cleanTerm(w.get(0));
 
-            if(Tools.processTerm(w)) {
+            if(Tools.processTerm(clean_w)) {
 
                 String sql = "SELECT ID FROM vocabulary WHERE WORD = '";
-                sql = sql + w + "';";
+                sql = sql + clean_w + "';";
                 ResultSet call = Command.executeQ(sql);
 
                 try {
                     if(call.next()){
                         wordsIDs.add(call.getInt(1));
+                        wordsIDsWeight.add(Float.parseFloat(w.get(1)));
                     }
                 } catch (SQLException e) {
                     e.printStackTrace();
@@ -159,10 +162,11 @@ public class Query {
         for(Integer i : wordsIDs){
             for (Map.Entry<Integer,Integer> e : wordDocOcc.get(i).entrySet()) {
 
+
                 if (resultTF.containsKey(e.getKey())){
-                    resultTF.put(e.getKey(), e.getValue() + resultTF.get(e.getKey()));
+                    resultTF.put(e.getKey(), e.getValue() + resultTF.get(e.getKey())  * wordsIDsWeight.get(wordsIDs.indexOf(i)));
                 } else {
-                    resultTF.put(e.getKey(), e.getValue());
+                    resultTF.put(e.getKey(), e.getValue() * wordsIDsWeight.get(wordsIDs.indexOf(i)));
                 }
             }
         }
@@ -183,7 +187,7 @@ public class Query {
             double weight = Math.log10((double)totalDocs/(double)nbDocs);
 
             if (!(resultIDF.containsKey(i))){
-                resultIDF.put(i, weight);
+                resultIDF.put(i, weight * wordsIDsWeight.get(wordsIDs.indexOf(i)));
             }
 
         }

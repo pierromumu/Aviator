@@ -22,10 +22,10 @@ public class Main {
         // REQUETES
 
         Path requestsFile = Paths.get("./files/requetes.html");
-        ArrayList<ArrayList<String>> requests = new ArrayList<>();
+        ArrayList<ArrayList<ArrayList<String>>> requests = new ArrayList<>();
         requests = Requests.parse(requestsFile);
 
-        ArrayList<ArrayList<String>> editedRequests = Reword.transformWordsLists(requests);
+        ArrayList<ArrayList<ArrayList<String>>> editedRequests = Reword.transformWordsLists(requests);
 
         System.out.println("");
 

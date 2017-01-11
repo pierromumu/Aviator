@@ -15,10 +15,21 @@ import java.util.List;
 public class Requests {
 
     // parsage du fichier contenant les requêtes
-    public static ArrayList<ArrayList<String>> parse(Path file){
 
-        ArrayList<ArrayList<String>> requests = new ArrayList<>();
-        ArrayList<String> request;
+    /*STRUCTURE:
+    *
+    * DOCUMENT
+    *  | LISTE DE MOTS
+    *  |  |  MOT [0]
+    *  |  |  POIDS [1]
+    *
+    * */
+
+    public static ArrayList<ArrayList<ArrayList<String>>> parse(Path file){
+
+        ArrayList<ArrayList<ArrayList<String>>> requests = new ArrayList<>();
+        ArrayList<ArrayList<String>> request;
+        ArrayList<String> word;
         ArrayList<String> questions = new ArrayList<>();
 
         String textContent = "";
@@ -39,6 +50,7 @@ public class Requests {
 
         for (int i = 1; i < requestsList.length; i++){
             request = new ArrayList<>();
+
             // le premier élément ne contient aucune requête
             temp = requestsList[i];
             requestInside = temp.split("description");
@@ -48,10 +60,14 @@ public class Requests {
             requestInside = requestInside[0].split(",");
             if (requestInside.length > 0){
                 for (int j = 0; j < requestInside.length -1; j ++){
-                    request.add(requestInside[j].trim());
+                    word = new ArrayList<>();
+                    word.add(requestInside[j].trim());
+                    word.add("1.0");
+                    request.add(word);
                 }
             }
-            requests.add((request));
+            requests.add(request);
+
         }
 
         return requests;
