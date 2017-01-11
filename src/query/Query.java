@@ -18,7 +18,8 @@ public class Query {
     private ArrayList<String> words;
     private ArrayList<Integer> wordsIDs;
     private int queryId;
-    static private HashMap<Integer, ArrayList<Float>> accuracyResults = new HashMap<>();
+    private static HashMap<Integer, ArrayList<Float>> accuracyResultsOriginal = new HashMap<>();
+    private static HashMap<Integer, ArrayList<Float>> accuracyResultsEdited = new HashMap<>();
 
     // identifiant du document et somme des occurrences des mots de la requête
     private HashMap<Integer, Integer> resultTF;
@@ -39,17 +40,36 @@ public class Query {
         queryId = id;
     }
 
-    public static void displayAccuracyResults(){
+    public static void displayAccuracyResultsOriginal(){
         int[] sizeData = {5, 10, 25};
-        for (int key:accuracyResults.keySet()){
-            for (int index = 0; index < accuracyResults.get(key).size(); index ++){
-                System.out.println("Request #"+key+" -- Data for "+sizeData[index]+" elements: Accuracy: "+accuracyResults.get(key).get(index));
+        for (int key:accuracyResultsOriginal.keySet()){
+            for (int index = 0; index < accuracyResultsOriginal.get(key).size(); index ++){
+                String tab1 = "  ";
+                String tab2 = " ";
+                if (sizeData[index] == 5)
+                    tab2 = "  ";
+                if (key >= 10)
+                    tab1 = " ";
+
+                System.out.println("Original request n°"+key+","+tab1+"for "+sizeData[index]+tab2+"results : Accuracy = "+accuracyResultsOriginal.get(key).get(index));
             }
-
         }
+    }
 
+    public static void displayAccuracyResultsEdited(){
+        int[] sizeData = {5, 10, 25};
+        for (int key:accuracyResultsEdited.keySet()){
+            for (int index = 0; index < accuracyResultsEdited.get(key).size(); index ++){
+                String tab1 = "  ";
+                String tab2 = " ";
+                if (sizeData[index] == 5)
+                    tab2 = "  ";
+                if (key >= 10)
+                    tab1 = " ";
 
-
+                System.out.println("Edited request n°"+key+","+tab1+"for "+sizeData[index]+tab2+"results : Accuracy = "+accuracyResultsEdited.get(key).get(index));
+            }
+        }
     }
 
     // mise en correspondance des mots avec les identifiants dans la BD
@@ -80,7 +100,7 @@ public class Query {
     }
 
     // exécution de la requête et affichage des résultats
-    public void execute(){
+    public void execute(int mode){
 
         resultTF = new HashMap<>();
         resultIDF = new HashMap<>();
@@ -224,14 +244,15 @@ public class Query {
 
         }
 
-        accuracyResults.put(this.queryId, accuracyTable);
+        if (mode == 1)
+            accuracyResultsOriginal.put(this.queryId, accuracyTable);
+        else
+            accuracyResultsEdited.put(this.queryId, accuracyTable);
 
         /*Graph graph = new Graph("Recall =f(Accuracy)", data, queryId);
         graph.pack();
         RefineryUtilities.centerFrameOnScreen(graph);
         graph.setVisible(true);*/
-
-
 
     }
 }
