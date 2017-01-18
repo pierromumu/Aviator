@@ -25,6 +25,21 @@ public class Main {
         ArrayList<ArrayList<ArrayList<String>>> requests = new ArrayList<>();
         requests = Requests.parse(requestsFile);
 
+        // AJOUT D'UNE NOUVELLE REQUETE BONUS ECRITE EN FRANCAIS DANS LE CODE (qrel1Q2 à modifier avec les résultats attendus)
+        ArrayList<ArrayList<String>> q12 = new ArrayList<>();
+        ArrayList<String> q12_tmp = new ArrayList<>();
+        q12_tmp.add("récompense");
+        q12_tmp.add("1.0");
+        q12.add(q12_tmp);
+        q12_tmp = new ArrayList<>();
+        q12_tmp.add("enfant de Trappes");
+        q12_tmp.add("1.0");
+        q12.add(q12_tmp);
+        q12_tmp = new ArrayList<>();
+        requests.add(q12);
+        System.out.println("");
+        System.out.println(requests);
+
         ArrayList<ArrayList<ArrayList<String>>> editedRequests = Reword.transformWordsLists(requests);
 
         System.out.println("");

@@ -282,7 +282,8 @@ public class Reword {
             for (String aRawRelated : rawRelated) {
                 temp = new ArrayList<>();
                 temp.add(aRawRelated);
-                temp.add("1.0");
+                // MODIFICATION DE LA PONDERATION DES MOTS RELIES (ANCIENNEMENT A "1.0")
+                temp.add(Double.toString(1.0/(double) rawRelated.size()));
                 tempRelated.add(temp);
             }
 
