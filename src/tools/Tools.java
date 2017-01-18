@@ -34,6 +34,10 @@ public class Tools {
 
         String cleanedTerm;
         cleanedTerm = term.toLowerCase();
+        cleanedTerm = cleanedTerm.replaceAll("[éèê]", "e");
+        cleanedTerm = cleanedTerm.replaceAll("[îì]", "i");
+        cleanedTerm = cleanedTerm.replaceAll("[ùûï]", "u");
+        cleanedTerm = cleanedTerm.replaceAll("[àâä]", "a");
 
         return stemTerm(cleanedTerm.replaceAll("[\\W]",""));
     }

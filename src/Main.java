@@ -17,7 +17,7 @@ public class Main {
 
         // CODE POUR PEUPLER LA BASE DE DONNEES
 
-        //Index.createIndex();
+        Index.createIndex();
 
         // REQUETES
 

@@ -8,6 +8,7 @@ import org.jfree.ui.RefineryUtilities;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.lang.Math;
@@ -36,8 +37,10 @@ public class Query {
         words = w;
         populateWordsIDs();
         if(wordsIDs.contains(null)) {
+            System.out.println("Pas d'ID!");
             throw new Exception();
         }
+        System.out.println("WordsIDs: "+wordsIDs);
         queryId = id;
     }
 
@@ -76,28 +79,64 @@ public class Query {
     // mise en correspondance des mots avec les identifiants dans la BD
     public void populateWordsIDs(){
 
-        wordsIDs = new ArrayList<Integer>(words.size());
+        wordsIDs = new ArrayList<Integer>();
         wordsIDsWeight = new ArrayList<>();
 
+
+
         for(ArrayList<String> w : words){
-            String clean_w = Tools.cleanTerm(w.get(0));
 
-            if(Tools.processTerm(clean_w)) {
+            String[] cutWords = w.get(0).split(" ");
 
-                String sql = "SELECT ID FROM vocabulary WHERE WORD = '";
-                sql = sql + clean_w + "';";
-                ResultSet call = Command.executeQ(sql);
+            System.out.println("cutWords: "+Arrays.toString(cutWords));
 
-                try {
-                    if(call.next()){
-                        wordsIDs.add(call.getInt(1));
-                        wordsIDsWeight.add(Float.parseFloat(w.get(1)));
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
+            int nbWords = cutWords.length;
+
+            System.out.println("nbWords (before modif): "+ nbWords);
+
+            for (int j = 0; j<cutWords.length; j++){
+                if (!Tools.processTerm(Tools.cleanTerm(cutWords[j]))){
+                    System.out.println("word: " + cutWords[j]);
+                    nbWords -=1;
                 }
+            }
 
-                Command.closeStmt();
+            System.out.println("nbWords: "+ nbWords);
+
+            if (nbWords > 0){
+                float weight = Float.parseFloat(w.get(1)) / nbWords;
+
+                System.out.println("Original weight: " + Float.parseFloat(w.get(1)) + " -- Modifed Weight: " + weight);
+
+                for (int j = 0; j<cutWords.length; j++){
+
+                    String clean_w = Tools.cleanTerm(cutWords[j]);
+
+                    if(Tools.processTerm(clean_w)) {
+
+                        String sql = "SELECT ID FROM vocabulary WHERE WORD = '";
+                        sql = sql + clean_w + "';";
+                        ResultSet call = Command.executeQ(sql);
+                        System.out.print(sql);
+
+                        try {
+                            if(call.next()){
+                                System.out.println(" -- SUCCESS");
+                                wordsIDs.add(call.getInt(1));
+                                wordsIDsWeight.add(weight);
+                            } else {
+                                System.out.println(" -- FAILURE");
+                            }
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+
+                        Command.closeStmt();
+                    }
+
+                }
+            } else{
+                System.out.println("/!\\/!\\/!\\/!\\ DIVISION BY ZERO /!\\/!\\/!\\/!\\");
             }
         }
     }
@@ -252,6 +291,8 @@ public class Query {
             accuracyResultsOriginal.put(this.queryId, accuracyTable);
         else
             accuracyResultsEdited.put(this.queryId, accuracyTable);
+
+
 
         /*Graph graph = new Graph("Recall =f(Accuracy)", data, queryId);
         graph.pack();
