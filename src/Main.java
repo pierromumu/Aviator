@@ -17,7 +17,7 @@ public class Main {
 
         // CODE POUR PEUPLER LA BASE DE DONNEES
 
-        Index.createIndex();
+        //Index.createIndex();
 
         // REQUETES
 
@@ -28,11 +28,11 @@ public class Main {
         // AJOUT D'UNE NOUVELLE REQUETE BONUS ECRITE EN FRANCAIS DANS LE CODE (qrel1Q2 à modifier avec les résultats attendus)
         ArrayList<ArrayList<String>> q12 = new ArrayList<>();
         ArrayList<String> q12_tmp = new ArrayList<>();
-        q12_tmp.add("récompense");
+        q12_tmp.add("est membre du jury pour");
         q12_tmp.add("1.0");
         q12.add(q12_tmp);
         q12_tmp = new ArrayList<>();
-        q12_tmp.add("enfant de Trappes");
+        q12_tmp.add("Globes de Cristal 2012");
         q12_tmp.add("1.0");
         q12.add(q12_tmp);
         q12_tmp = new ArrayList<>();
